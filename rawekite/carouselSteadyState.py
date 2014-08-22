@@ -16,6 +16,7 @@
 # along with rawesome.  If not, see <http://www.gnu.org/licenses/>.
 
 import casadi as C
+import numpy as np
 from rawe.ocputils import Constraints
 
 pi = C.pi
@@ -51,16 +52,61 @@ def getSteadyStateNlpFunctions(dae, ref_dict = {}):
 
     dvs = C.veccat([dae.xVec(), dae.zVec(), dae.uVec(), dae.pVec(), dae.xDotVec()])
     obj = 0
-    for name in ['aileron', 'elevator', 'rudder', 'flaps']:
+#     for name in ['aileron', 'elevator', 'rudder', 'flaps']:
+    for name in dae.uNames():
         if name in dae:
-            obj += dae[name] ** 2 
+            obj += dae[ name ] ** 2
     
     return dvs, obj, g.getG(), g.getLb(), g.getUb()
 
-def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
-                   bounds = None, dotBounds = None, guess = None, dotGuess = None, verbose = True):
+def getRobustSteadyStateNlpFunctions(dae, ref_dict = {}):
+    xDotSol, zSol = dae.solveForXDotAndZ()
+
+    ginv = Constraints()
+    def constrainInvariantErrs():
+        R_c2b = dae['R_c2b']
+        makeOrthonormal(ginv, R_c2b)
+        ginv.add(dae['c'], '==', 0, tag = ('c(0) == 0', None))
+        ginv.add(dae['cdot'], '==', 0, tag = ('cdot( 0 ) == 0', None))
+        di = dae['cos_delta'] ** 2 + dae['sin_delta'] ** 2 - 1
+        ginv.add(di, '==', 0, tag = ('delta invariant', None))
+        
+    constrainInvariantErrs()
+    invariants = ginv.getG()
     
-    dvs, ffcn, gfcn, lbg, ubg = getSteadyStateNlpFunctions(dae, ref_dict)
+    J = C.jacobian(invariants,dae.xVec())
+
+    # make steady state model
+    g = Constraints()
+    
+    xds = C.vertcat([xDotSol[ name ] for name in dae.xNames()])
+    jInv = C.mul(J.T,C.solve(C.mul(J,J.T),invariants))
+    
+    g.add(xds - jInv - dae.xDotVec(), '==', 0, tag = ('dae residual', None))            
+
+    for name in ['alpha_deg', 'beta_deg', 'cL']:
+        if name in ref_dict:
+            g.addBnds(dae[name], ref_dict[name], tag = (name, None))
+
+    dvs = C.veccat([dae.xVec(), dae.uVec(), dae.pVec(), dae.xDotVec()])
+    
+    obj = 0
+    for name in dae.uNames():
+        if name in dae:
+            obj += dae[ name ] ** 2
+    
+    return dvs, obj, g.getG(), g.getLb(), g.getUb(), zSol
+
+def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
+                   bounds = None, dotBounds = None, guess = None, dotGuess = None,
+                   robustVersion = False, verbose = True):
+    
+    if robustVersion == True:
+        dvs, ffcn, gfcn, lbg, ubg, zSol = getRobustSteadyStateNlpFunctions(dae, ref_dict)
+        dvsNames = dae.xNames() + dae.uNames() + dae.pNames()
+    else:
+        dvs, ffcn, gfcn, lbg, ubg = getSteadyStateNlpFunctions(dae, ref_dict)
+        dvsNames = dae.xNames() + dae.zNames() + dae.uNames() + dae.pNames()
 
     if guess is None:
         guess = {'x':r0, 'y':0, 'z':0,
@@ -109,9 +155,9 @@ def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
                     'delta_wind_x':0.0, 'delta_wind_y':0.0, 'delta_wind_z':0.0
                     , 'alpha0': 0.0}
 
-    guessVec = C.DMatrix([guess[n] for n in dae.xNames() + dae.zNames() + dae.uNames() + dae.pNames()] +
+    guessVec = C.DMatrix([guess[n] for n in dvsNames] +
                          [dotGuess[n] for n in dae.xNames()])
-
+    
     if bounds is None:
         bounds = {'x':(-0.1 * r0, r0 * 2), 'y':(-1.1 * r0, 1.1 * r0), 'z':(-1.1 * r0, 1.1 * r0),
                  'dx':(0, 0), 'dy':(0, 0), 'dz':(0, 0),
@@ -140,8 +186,6 @@ def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
     if ref_dict is not None:
         for name in ref_dict: bounds[name] = ref_dict[name]
 
-#     print bounds
-
     if dotBounds is None:
         dotBounds = {'x':(-1, 1), 'y':(-1, 1), 'z':(-1, 1),
                      'dx':(0, 0), 'dy':(0, 0), 'dz':(0, 0),
@@ -163,58 +207,30 @@ def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
                      'wind_x':(0, 0), 'wind_y':(0, 0), 'wind_z':(0, 0),
                      'delta_wind_x':(0, 0), 'delta_wind_y':(0, 0), 'delta_wind_z':(0, 0)
                      , 'alpha0': (0.0, 0.0)}
+        
+    if robustVersion == True:
+        # Joris's recommendation
+        for name in dae.xNames():
+            if name in ["r", "ddelta"] or "disturbance" in name:
+                continue
+            if bounds[name][0] == bounds[name][1]:
+                bounds[name] = (-1e12, 1e12)
+            if dotBounds[name][0] == dotBounds[name][1]:
+                dotBounds[name] = (-1e12, 1e12)
+            if name not in  ["aileron", "elevator", "motor_torque", "ddr", "sin_delta"]:
+                dotBounds[ name ] = (0, 0)
                      
-    boundsVec = [bounds[n] for n in dae.xNames() + dae.zNames() + dae.uNames() + dae.pNames()] + \
+    boundsVec = [bounds[n] for n in dvsNames] + \
                 [dotBounds[n] for n in dae.xNames()]
-
-
-#    gfcn.setInput(guessVec)
-#    gfcn.evaluate()
-#    ret = gfcn.output()
-#    for k,v in enumerate(ret):
-#        if math.isnan(v):
-#            print 'index ',k,' is nan: ',g._tags[k]
-#    import sys; sys.exit()
-
-#    context   = zmq.Context(1)
-#    publisher = context.socket(zmq.PUB)
-#    publisher.bind("tcp://*:5563")
-#    class MyCallback:
-#        def __init__(self):
-#            import rawekite.kiteproto as kiteproto
-#            import rawekite.kite_pb2 as kite_pb2
-#            self.kiteproto = kiteproto
-#            self.kite_pb2 = kite_pb2
-#            self.iter = 0
-#        def __call__(self,f,*args):
-#            x = C.DMatrix(f.input('x'))
-#            sol = {}
-#            for k,name in enumerate(dae.xNames()+dae.zNames()+dae.uNames()+dae.pNames()):
-#                sol[name] = x[k].at(0)
-#            lookup = lambda name: sol[name]
-#            kp = self.kiteproto.toKiteProto(lookup,
-#                                            lineAlpha=0.2)
-#            mc = self.kite_pb2.MultiCarousel()
-#            mc.horizon.extend([kp])
-#            mc.messages.append("iter: "+str(self.iter))
-#            self.iter += 1
-#            publisher.send_multipart(["multi-carousel", mc.SerializeToString()])
         
     nlp = C.SXFunction(C.nlpIn(x = dvs), C.nlpOut(f = ffcn, g = gfcn))
+    solver = C.IpoptSolver(nlp)
 
-    solver = C.IpoptSolver( nlp )
-#    def addCallback():
-#        nd = len(boundsVec)
-#        nc = g.getLb().size()
-#        c = C.PyFunction( MyCallback(), C.nlpsolverOut(x=C.sp_dense(nd,1), f=C.sp_dense(1,1), lam_x=C.sp_dense(nd,1), lam_p = C.sp_dense(0,1), lam_g = C.sp_dense(nc,1), g = C.sp_dense(nc,1) ), [C.sp_dense(1,1)] )
-#        c.init()
-#        solver.setOption("iteration_callback", c)
-#    addCallback()
     solver.setOption('max_iter', 10000)
-#    solver.setOption('tol',1e-14)
+    solver.setOption('tol', 1e-9)
     if verbose is False:
-        solver.setOption('suppress_all_output','yes')
-        solver.setOption('print_time',False)
+        solver.setOption('suppress_all_output', 'yes')
+        solver.setOption('print_time', False)
     solver.init()
 
     solver.setInput(lbg, 'lbg')
@@ -227,19 +243,34 @@ def getSteadyState(dae, conf, omega0, r0, ref_dict = {},
     solver.solve()
     ret = solver.getStat('return_status')
     assert ret in ['Solve_Succeeded', 'Solved_To_Acceptable_Level'], 'Solver failed: ' + ret
-
-#    publisher.close()
-#    context.destroy()
+    
     xOpt = solver.output('x')
     k = 0
     sol = {}
-    for name in dae.xNames() + dae.zNames() + dae.uNames() + dae.pNames():
+    for name in dvsNames:
         sol[name] = xOpt[k].at(0)
         k += 1
-#        print name+':\t',sol[name]
+        
     dotSol = {}
     for name in dae.xNames():
         dotSol[name] = xOpt[k].at(0)
         k += 1
-#        print 'DDT('+name+'):\t',dotSol[name]
+        
+    if robustVersion is True:
+        zIn = C.veccat([dae.xVec(), dae.uVec()])
+        zOut = C.veccat([zSol[ el ] for el in dae.zNames()])
+        zFcn = C.SXFunction([ zIn ], [ zOut ])
+        zFcn.init()
+        zFcn.setInput(C.DMatrix([sol[ n ] for n in dae.xNames() + dae.uNames()]), 0)
+        zFcn.evaluate()
+        zEval = zFcn.output( 0 ) 
+        
+        for k, name in enumerate( dae.zNames() ):
+            sol[ name ] = zEval[ k ].at( 0 )
+    
+    # Just a quick check
+    for name in dae.xNames():
+        if abs( dotSol[ name ] ) > 1e-8 and name not in ["sin_delta", "cos_delta"]:
+            print "Warning: dotSol[ %s ] = %5.3f" % (name, sol[ name ])
+    
     return sol, dotSol
