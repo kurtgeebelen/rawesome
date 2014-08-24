@@ -33,7 +33,7 @@ class SteadyStateCalculator:
             self.dvs, self.ffcn, self.gfcn, self.lbg, self.ubg, zSol = self.getRobustSteadyStateNlpFunctions(dae, ref_dict)
             self.dvsNames = dae.xNames() + dae.uNames() + dae.pNames()
             
-            zIn = C.veccat([dae.xVec(), dae.uVec()])
+            zIn = C.veccat([dae[ name ] for name in self.dvsNames])
             zOut = C.veccat([zSol[ el ] for el in dae.zNames()])
             self.zFcn = C.SXFunction([ zIn ], [ zOut ])
             self.zFcn.init()
@@ -281,7 +281,7 @@ class SteadyStateCalculator:
             
         if self.robustVersion is True:
             
-            self.zFcn.setInput(C.DMatrix([sol[ n ] for n in self.dae.xNames() + self.dae.uNames()]), 0)
+            self.zFcn.setInput(C.DMatrix([sol[ n ] for n in self.dvsNames]), 0)
             self.zFcn.evaluate()
             zEval = self.zFcn.output( 0 ) 
             
