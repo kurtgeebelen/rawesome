@@ -191,6 +191,14 @@ def setupModel(dae, conf):
         t2 = t2 * gamma_homotopy + dae.addZ('t2_homotopy') * (1 - gamma_homotopy)
         t3 = t3 * gamma_homotopy + dae.addZ('t3_homotopy') * (1 - gamma_homotopy)
         
+    fx_dist = 0
+    fy_dist = 0
+    fz_dist = 0
+    
+    mx_dist = 0
+    my_dist = 0
+    mz_dist = 0
+        
     if 'useVirtualForces' in conf:
         _v = conf[ 'useVirtualForces' ]
         if isinstance(_v, str):
@@ -204,33 +212,42 @@ def setupModel(dae, conf):
         if _type == 'random_walk':
             if _which[ 0 ]:
                 dae.addU('df1_disturbance')
-                f1 += dae['rho_sref_v2'] * dae.addX('f1_disturbance')
+                fx_dist += dae['rho_sref_v2'] * dae.addX('f1_disturbance')
 
             if _which[ 1 ]:
                 dae.addU('df2_disturbance')
-                f2 += dae['rho_sref_v2'] * dae.addX('f2_disturbance')
+                fy_dist += dae['rho_sref_v2'] * dae.addX('f2_disturbance')
 
             if _which[ 2 ]:
                 dae.addU('df3_disturbance')
-                f3 += dae['rho_sref_v2'] * dae.addX('f3_disturbance')
+                fz_dist += dae['rho_sref_v2'] * dae.addX('f3_disturbance')
 
         elif _type == 'parameter':
             if _which[ 0 ]:
-                f1 += dae['rho_sref_v2'] * dae.addX('f1_disturbance')
+                fx_dist += dae['rho_sref_v2'] * dae.addX('f1_disturbance')
             if _which[ 1 ]:
-                f2 += dae['rho_sref_v2'] * dae.addX('f2_disturbance')
+                fy_dist += dae['rho_sref_v2'] * dae.addX('f2_disturbance')
             if _which[ 2 ]:
-                f3 += dae['rho_sref_v2'] * dae.addX('f3_disturbance')
+                fz_dist += dae['rho_sref_v2'] * dae.addX('f3_disturbance')
             
         elif _type == 'online_data':
             if _which[ 0 ]:
-                f1 += dae['rho_sref_v2'] * dae.addP('f1_disturbance')
+                fx_dist += dae['rho_sref_v2'] * dae.addP('f1_disturbance')
             if _which[ 1 ]:
-                f2 += dae['rho_sref_v2'] * dae.addP('f2_disturbance')
+                fy_dist += dae['rho_sref_v2'] * dae.addP('f2_disturbance')
             if _which[ 2 ]:
-                f3 += dae['rho_sref_v2'] * dae.addP('f3_disturbance')
+                fz_dist += dae['rho_sref_v2'] * dae.addP('f3_disturbance')
         else:
             raise ValueError("WTF?")
+        
+        
+    f1 += fx_dist
+    f2 += fy_dist
+    f3 += fz_dist
+    
+    dae["aero_fx_dist"] = fx_dist
+    dae["aero_fy_dist"] = fy_dist
+    dae["aero_fz_dist"] = fz_dist
         
     if 'useVirtualTorques' in conf:
         _v = conf[ 'useVirtualTorques' ]
@@ -245,31 +262,39 @@ def setupModel(dae, conf):
         if _type == 'random_walk':
             if _which[ 0 ]:
                 dae.addU('dt1_disturbance')
-                t1 += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t1_disturbance')
+                mx_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t1_disturbance')
             if _which[ 1 ]:
                 dae.addU('dt2_disturbance')
-                t2 += dae['rho_sref_v2'] * conf['cref'] * dae.addX('t2_disturbance')
+                my_dist += dae['rho_sref_v2'] * conf['cref'] * dae.addX('t2_disturbance')
             if _which[ 2 ]:
                 dae.addU('dt3_disturbance')
-                t3 += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t3_disturbance')
+                mz_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t3_disturbance')
             
         elif _type == 'parameter':
             if _which[ 0 ]:
-                t1 += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t1_disturbance')
+                mx_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t1_disturbance')
             if _which[ 1 ]:
-                t2 += dae['rho_sref_v2'] * conf['cref'] * dae.addX('t2_disturbance')
+                my_dist += dae['rho_sref_v2'] * conf['cref'] * dae.addX('t2_disturbance')
             if _which[ 2 ]:
-                t3 += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t3_disturbance')
+                mz_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addX('t3_disturbance')
 
         elif _type == 'online_data':
             if _which[ 0 ]:
-                t1 += dae['rho_sref_v2'] * conf['bref'] * dae.addP('t1_disturbance')
+                mx_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addP('t1_disturbance')
             if _which[ 1 ]:
-                t2 += dae['rho_sref_v2'] * conf['cref'] * dae.addP('t2_disturbance')
+                my_dist += dae['rho_sref_v2'] * conf['cref'] * dae.addP('t2_disturbance')
             if _which[ 2 ]:
-                t3 += dae['rho_sref_v2'] * conf['bref'] * dae.addP('t3_disturbance')
+                mz_dist += dae['rho_sref_v2'] * conf['bref'] * dae.addP('t3_disturbance')
         else:
             raise ValueError("WTF?")
+        
+    t1 += mx_dist
+    t2 += my_dist
+    t3 += mz_dist
+    
+    dae["aero_mx_dist"] = mx_dist
+    dae["aero_my_dist"] = my_dist
+    dae["aero_mz_dist"] = mz_dist
 
     # mass matrix
     mm = C.SXMatrix(8, 8)
