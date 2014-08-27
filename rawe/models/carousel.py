@@ -499,11 +499,17 @@ def carouselModel(conf):
     else:
         raise ValueError('unrecognized delta_parameterization "'+conf['delta_parameterization']+'"')
 
-    dae.addU( [ "daileron"
-              , "delevator"
-              , "dmotor_torque"
-              , 'dddr'
-              ] )
+    if "parametrizeInputsAsOnlineData" in conf and conf[ "parametrizeInputsAsOnlineData" ] is True:
+        dae.addP( [ "daileron",
+                    "delevator",
+                    "dmotor_torque",
+                    'dddr' ] )
+    else:
+        dae.addU( [ "daileron",
+                    "delevator",
+                    "dmotor_torque",
+                    'dddr' ] )
+    
     # add wind parameter if wind shear is in configuration
     if 'wind_model' in conf:
         if conf['wind_model']['name'] == 'hardcoded':
