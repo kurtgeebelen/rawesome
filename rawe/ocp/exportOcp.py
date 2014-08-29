@@ -174,6 +174,9 @@ ACADOvariables acadoVariables;
     elif ocpOptions['QP_SOLVER'] == 'QP_QPDUNES':
         import qpdunes
         exportPath = qpdunes.exportPhase2(cgOptions, files)
+    elif ocpOptions['QP_SOLVER'] == 'QP_FORCES':
+        import forces
+        exportPath = forces.exportPhase2(cgOptions, files)
     else:
         raise Exception('the impossible happened, unsupported qp solver: "'+str(ocpOptions['QP_SOLVER'])+'"')
 
