@@ -46,6 +46,7 @@ class OcpExportOptions(Options):
         self.add(OptStr('PRINTLEVEL',
                         ['NONE','MEDIUM','HIGH', 'DEBUG'],
                         default='NONE'))
+        self.add(OptBool('CG_FORCE_DIAGONAL_HESSIAN',default=False))
 
 class Ocp(object):
     def __init__(self, dae, N = None, ts = None, yxNames = None, yuNames = None, useLinearObjTerms = False, hashPrefix = 'ocp'):
