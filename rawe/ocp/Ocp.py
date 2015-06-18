@@ -286,11 +286,11 @@ class Ocp(object):
             raise Exception(usage)
 
     def _constrainOne(self, lhs, comparison, rhs, when=None):
-        if type(lhs) == C.SXMatrix:
+        if type(lhs) == C.SX:
             assert lhs.shape == (1,1), "lhs must be scalar, got matrix with shape: "+str(lhs.shape)
         else:
             assert type(lhs) in [int,float], "lhs type unrecognized: "+str(type(lhs))
-        if type(rhs) == C.SXMatrix:
+        if type(rhs) == C.SX:
             assert rhs.shape == (1,1), "rhs must be scalar, got matrix with shape: "+str(rhs.shape)
         else:
             assert type(rhs) in [int,float], "rhs type unrecognized: "+str(type(rhs))
@@ -305,7 +305,7 @@ class Ocp(object):
             rml = rhs-lhs
             f = C.SXFunction([inputs],[rml])
             f.init()
-            if len(f.getFree()) != 0:
+            if f.getFree().shape[0] != 0:
                 return
 
             # take jacobian of rhs-lhs
@@ -313,8 +313,8 @@ class Ocp(object):
             # fail if any jacobian element is not constant
             coeffs = {}
             for j in range(inputs.size()):
-                if not jac[0,j].toScalar().isZero():
-                    if not jac[0,j].toScalar().isConstant():
+                if jac.hasNZ(0,j):
+                    if not jac[0,j].isConstant():
                         return
                     coeffs[j] = jac[0,j]
             if len(coeffs) == 0:
@@ -327,9 +327,10 @@ class Ocp(object):
             j = coeffs.keys()[0]
             coeff = coeffs[j]
             name = (self.dae.xNames()+self.dae.uNames())[j]
-            [f0] = f.eval([0*inputs])
+            [f0] = f([0*inputs])
             # if we just divided by a negative number (coeff), flip the comparison
-            if not coeff.toScalar().isNonNegative():
+            #if not coeff.toScalar().isNonNegative():
+            if not coeff>=0.0:
                 # lhs       `cmp`       rhs
                 # 0         `cmp`       rhs - lhs
                 # 0         `cmp`       coeff*x + f0
@@ -372,7 +373,7 @@ class Ocp(object):
     def __minimizeLsq(self, obj):
         if isinstance(obj, list):
             obj = C.veccat(obj)
-        C.makeDense(obj)
+        obj.makeDense()
         shape = obj.shape
         assert shape[0] == 1 or shape[1] == 1, 'objective cannot be matrix, got shape: '+str(shape)
         assert not hasattr(self, '_minLsq'), 'you can only call __minimizeLsq once'
@@ -381,7 +382,7 @@ class Ocp(object):
     def __minimizeLsqEndTerm(self, obj):
         if isinstance(obj, list):
             obj = C.veccat(obj)
-        C.makeDense(obj)
+        obj.makeDense()
         shape = obj.shape
         assert shape[0] == 1 or shape[1] == 1, 'objective cannot be matrix, got shape: '+str(shape)
         assert not hasattr(self, '_minLsqEndTerm'), 'you can only call __minimizeLsqEndTerm once'

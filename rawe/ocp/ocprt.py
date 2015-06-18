@@ -387,9 +387,15 @@ class OcpRT(object):
             elif sim != None: # Integrate the system forward with the provided integrator
                 # Integrate the system forward using the last control
                 new_x = sim.step(self.x[-1,:],new_u,{})
+                full_u = numpy.zeros(self.u.shape)
+                full_u[:-1,:] = guess_u
+                full_u[-1,:] = new_u
 
-                self.u = numpy.append(guess_u,new_u,axis=0)
-                self.x = numpy.append(guess_x,new_x.T,axis=0)
+                full_x = numpy.zeros(self.x.shape)
+                full_x[:-1,:] = guess_x
+                full_x[-1,:] = new_x
+                self.u = full_u
+                self.r = full_x
             else:
                 raise Exception('If a new control is provided as an input to the shift function either a state or an integrator must also be provided')
 
@@ -798,8 +804,8 @@ class MpcRT(OcpRT):
                        phase1Options=phase1Options)
 
         # set up measurement functions
-        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.densify(self.ocp.yx)])
-        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.densify(self.ocp.yu)])
+        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.dense(self.ocp.yx)])
+        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.dense(self.ocp.yu)])
         self._yxFun.init()
         self._yuFun.init()
         
@@ -843,8 +849,8 @@ class MheRT(OcpRT):
                        integratorMeasurements=C.veccat([ocp.yx,ocp.yu]))
 
         # set up measurement functions
-        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.densify(self.ocp.yx)])
-        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.densify(self.ocp.yu)])
+        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.dense(self.ocp.yx)])
+        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.dense(self.ocp.yu)])
         self._yxFun.init()
         self._yuFun.init()
 
