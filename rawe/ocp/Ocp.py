@@ -373,7 +373,7 @@ class Ocp(object):
     def __minimizeLsq(self, obj):
         if isinstance(obj, list):
             obj = C.veccat(obj)
-        obj.makeDense()
+        obj = C.densify(obj)
         shape = obj.shape
         assert shape[0] == 1 or shape[1] == 1, 'objective cannot be matrix, got shape: '+str(shape)
         assert not hasattr(self, '_minLsq'), 'you can only call __minimizeLsq once'
@@ -382,7 +382,7 @@ class Ocp(object):
     def __minimizeLsqEndTerm(self, obj):
         if isinstance(obj, list):
             obj = C.veccat(obj)
-        obj.makeDense()
+        obj = C.densify(obj)
         shape = obj.shape
         assert shape[0] == 1 or shape[1] == 1, 'objective cannot be matrix, got shape: '+str(shape)
         assert not hasattr(self, '_minLsqEndTerm'), 'you can only call __minimizeLsqEndTerm once'

@@ -154,6 +154,7 @@ class Dae(object):
         get algebraic variable
         '''
         self._freezeXzup('zVec()')
+        if len(self._zNames)==0: return C.SX()
         return C.veccat([self._syms[n] for n in self._zNames])
     def uVec(self):
         '''

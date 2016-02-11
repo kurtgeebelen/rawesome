@@ -164,8 +164,8 @@ class Nmhe(object):
         self.masterFun = C.MXFunction([V,self._U],[hessL, gradF, g, jacobG.call([V,self._U])[0], f])
         self.masterFun.init()
 
-#        self.qp = C.CplexSolver(hessL.sparsity(),jacobG.output(0).sparsity())
-        self.qp = C.NLPQPSolver(hessL.sparsity(),jacobG.output(0).sparsity())
+#        self.qp = C.CplexSolver(hessL.sparsity(),jacobG.outputSparsity())
+        self.qp = C.NLPQPSolver(hessL.sparsity(),jacobG.outputSparsity())
         self.qp.setOption('nlp_solver',C.IpoptSolver)
         self.qp.setOption('nlp_solver_options',{'print_level':0,'print_time':False})
         self.qp.init()
@@ -248,11 +248,11 @@ class Nmhe(object):
 
             t1 = time.time()
             masterFunTime = (t1-t0)*1000
-            hessL  = self.masterFun.output(0)
-            gradF  = self.masterFun.output(1)
-            g      = self.masterFun.output(2)
-            jacobG = self.masterFun.output(3)
-            f      = self.masterFun.output(4)
+            hessL  = self.masterFun.getOutput(0)
+            gradF  = self.masterFun.getOutput(1)
+            g      = self.masterFun.getOutput(2)
+            jacobG = self.masterFun.getOutput(3)
+            f      = self.masterFun.getOutput(4)
 
             self.qp.setInput(0,      C.QP_X_INIT)
             self.qp.setInput(hessL,  C.QP_H)
@@ -278,7 +278,7 @@ class Nmhe(object):
             print "f: ",f,'\tmax constraint: ',max(C.fabs(g))
             print "qp delta time: %.3f ms" % ((t1-t0)*1000)
             print ""
-            deltaX = self.qp.output(C.QP_PRIMAL)
+            deltaX = self.qp.getOutput(C.QP_PRIMAL)
 
 #            import scipy.io
 #            scipy.io.savemat('hessL.mat',{'hessL':np.array(hessL),

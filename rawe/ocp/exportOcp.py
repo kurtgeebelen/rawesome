@@ -79,13 +79,13 @@ def writeObjective(ocp, out0, exportName):
     if exportName == 'lsqExtern':
         inputs = C.veccat([dae.xVec(), dae.uVec(), dae.pVec()])
         outs = C.veccat( [ out, C.jacobian(out,dae.xVec()).T, C.jacobian(out,dae.uVec()).T ] )
-        outputFun = C.SXFunction([inputs], [C.dense(outs)])
+        outputFun = C.SXFunction([inputs], [C.densify(outs)])
         outputFun.init()
         assert outputFun.getFree().shape[0] == 0, 'the "impossible" happened >_<'
     elif exportName == 'lsqEndTermExtern':
         inputs = C.veccat([dae.xVec(), dae.pVec()])
         outs = C.veccat( [ out, C.jacobian(out,dae.xVec()).T ] )
-        outputFun = C.SXFunction([inputs], [C.dense(outs)])
+        outputFun = C.SXFunction([inputs], [C.densify(outs)])
         outputFun.init()
         assert outputFun.getFree().shape[0] == 0, 'lsqEndTermExtern cannot be a function of controls u, saw: '+str(outputFun.getFree())
     else:

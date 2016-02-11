@@ -360,11 +360,11 @@ class OutputMapGenerator(object):
         if f0 is None:
             assert (len(self._outputNames0) == 0)
         else:
-            assert (len(self._outputNames0) == f0.getNumOutputs())
+            assert (len(self._outputNames0) == f0.nOut())
         if fAll is None:
             assert (len(self._outputNames) == 0)
         else:
-            assert (len(self._outputNames) == fAll.getNumOutputs())
+            assert (len(self._outputNames) == fAll.nOut())
 
         self._nk = ocp.nk
         self._nicp = ocp.nicp
@@ -408,8 +408,8 @@ class OutputMap(object):
                 return val
             outputMapGenerator.fEveryOutput.setInput(dvs,0)
             outputMapGenerator.fEveryOutput.evaluate()
-            allOutputs = [scalarToFloat(np.array(outputMapGenerator.fEveryOutput.output(k)).squeeze())
-                          for k in range(outputMapGenerator.fEveryOutput.getNumOutputs())]
+            allOutputs = [scalarToFloat(np.array(outputMapGenerator.fEveryOutput.getOutput(k)).squeeze())
+                          for k in range(outputMapGenerator.fEveryOutput.nOut())]
         else:
             raise TypeError("OutputMap got unrecognized design vector type: "+str(type(dvs)))
 
@@ -565,7 +565,7 @@ class QuadratureMap(object):
             f = quadratureManager.quadratureFun
             f.setInput(numericDvs,0)
             f.evaluate()
-            allOutputs = [np.array(f.output(k)).squeeze() for k in range(f.getNumOutputs())]
+            allOutputs = [np.array(f.getOutput(k)).squeeze() for k in range(f.nOut())]
 
         k = 0
         self._quadMap = {}

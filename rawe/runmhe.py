@@ -51,9 +51,9 @@ if __name__ == '__main__':
         newton.isolver.setInput(xTraj[-1],0)
         newton.isolver.setInput(uTraj[-1],1)
         newton.isolver.setInput(p[-1],2)
-        newton.isolver.output().set(1)
+        newton.isolver.getOutput().set(1)
         newton.isolver.evaluate()
-        xTraj.append(np.array(newton.isolver.output(1)).squeeze())
+        xTraj.append(np.array(newton.isolver.getOutput(1)).squeeze())
 
 #    for k in range(nk):
 #        print xTraj[k],uTraj[k]
@@ -117,7 +117,6 @@ if __name__ == '__main__':
 
 
 
-##    newton.isolver.input(0).set(x0)
 #    newton.isolver.setInput(x0,0)
 #    newton.isolver.setInput(0,1) # torque
 #    newton.isolver.setInput(0.3,2) # mass
@@ -130,5 +129,5 @@ if __name__ == '__main__':
 #    j.setInput(0,1)
 #    j.setInput(0.3,2)
 #    j.evaluate()
-#    print j.output(0)
-#    print j.output(1)
+#    print j.getOutput(0)
+#    print j.getOutput(1)

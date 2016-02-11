@@ -237,7 +237,7 @@ class RtIntegrator(object):
             f = self._rtModelGen['rhs']
             f.setInput(dataIn)
             f.evaluate()
-            print f.output() - dataOut
+            print f.getOutput() - dataOut
 
         return dataOut
 
@@ -257,7 +257,7 @@ class RtIntegrator(object):
             f = self._rtModelGen['rhsJacob']
             f.setInput(dataIn)
             f.evaluate()
-            print (f.output() - dataOut)
+            print (f.getOutput() - dataOut)
         return dataOut
 
     def run(self,*args,**kwargs):
@@ -318,7 +318,7 @@ class RtIntegrator(object):
         self._outputsFun.evaluate()
         ret = {}
         for k,name in enumerate(self._dae.outputNames()):
-            ret[name] = numpy.array(self._outputsFun.output(k))
+            ret[name] = numpy.array(self._outputsFun.getOutput(k))
         return ret
     
     def getExportPath( self ):

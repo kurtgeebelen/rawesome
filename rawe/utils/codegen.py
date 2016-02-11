@@ -134,7 +134,10 @@ def withTempdir(command):
 
 def writeCCode(f, name):
     def callme(tmpdir):
-        f.generateCode( os.path.join(tmpdir,'generatedCode.c') )
+        backup = os.getcwd()
+        os.chdir(tmpdir)
+        f.generate( 'generatedCode')
+        os.chdir(backup)
     namespace = "ALRIGHT_GUYS_LETS_EXPORT_"+name
     codestring = withTempdir(callme)['generatedCode.c']
     codestring = '\n'.join(['  '+c for c in codestring.split('\n')])
@@ -143,11 +146,11 @@ def writeCCode(f, name):
                  "} // namespace "+ namespace +"\n\n"
 
     real = 'double'
-    args0 = ['const '+real+'* x'+str(k) for k in range(f.getNumInputs())]
-    args0 += [real+'* r'+str(k) for k in range(f.getNumOutputs())]
+    args0 = ['const '+real+'* x'+str(k) for k in range(f.nIn())]
+    args0 += [real+'* r'+str(k) for k in range(f.nOut())]
     args0 = '(' + ', '.join(args0) + ')'
-    args1 = ['x'+str(k) for k in range(f.getNumInputs())]
-    args1 += ['r'+str(k) for k in range(f.getNumOutputs())]
+    args1 = ['x'+str(k) for k in range(f.nIn())]
+    args1 += ['r'+str(k) for k in range(f.nOut())]
     args1 = '(' + ', '.join(args1) + ')'
 
     proto0 = 'void '+name+args0

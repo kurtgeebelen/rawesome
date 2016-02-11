@@ -109,7 +109,7 @@ class Trajectory(object):
         # make time grid
         ocp.hfun.setInput(v_opt)
         ocp.hfun.evaluate()
-        h = float(ocp.hfun.output())
+        h = float(ocp.hfun.getOutput())
 
         self.tgrid = numpy.resize([],(ocp.nk+1,ocp.nicp,ocp.deg+1))
         tf = 0.0

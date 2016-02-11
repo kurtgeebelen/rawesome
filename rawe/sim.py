@@ -100,7 +100,7 @@ class Sim(object):
         self.integrator.setInput(xVec,C.INTEGRATOR_X0)
         self.integrator.setInput(C.veccat([uVec,pVec]),C.INTEGRATOR_P)
         self.integrator.evaluate()
-        xNext = C.DMatrix(self.integrator.output())
+        xNext = C.DMatrix(self.integrator.getOutput())
         if type(x) == dict:
             ret = {}
             for k,name in enumerate(self.dae.xNames()):
@@ -119,7 +119,7 @@ class Sim(object):
         self.outputsFun0.evaluate()
         ret = {}
         for k,name in enumerate(self.outputs0names):
-            ret[name] = maybeToScalar(C.DMatrix(self.outputsFun0.output(k)))
+            ret[name] = maybeToScalar(C.DMatrix(self.outputsFun0.getOutput(k)))
         return ret
 
     def log(self,new_x=None,new_u=None,new_y=None,new_yN=None,new_out=None):

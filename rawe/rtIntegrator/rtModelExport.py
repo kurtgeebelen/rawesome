@@ -30,13 +30,13 @@ def generateCModel(dae,timeScaling,measurements):
     rhs.init()
     # handle time scaling
     [f] = rhs([C.veccat([dae.xVec(), dae.zVec(), dae.uVec(), dae.pVec(), xdot/timeScaling])])
-    rhs = C.SXFunction( [inputs], [C.dense(f)] )
+    rhs = C.SXFunction( [inputs], [C.densify(f)] )
     rhs.init()
     rhsString = codegen.writeCCode(rhs, 'rhs')
 
     # dae residual jacobian
     jf = C.veccat( [ C.jacobian(f,jacobian_inputs).T ] )
-    rhsJacob = C.SXFunction( [inputs], [C.dense(jf)] )
+    rhsJacob = C.SXFunction( [inputs], [C.densify(jf)] )
     rhsJacob.init()
     rhsJacobString = codegen.writeCCode(rhsJacob, 'rhsJacob')
 

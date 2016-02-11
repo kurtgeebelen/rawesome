@@ -164,7 +164,7 @@ class MultipleShootingStage():
 #        g.evaluate()
 #        parallelG.evaluate()
 
-#        print parallelG.output()-g.output()
+#        print parallelG.getOutput()-g.getOutput()
 #        exit(0)
 
         # make solver function
@@ -187,4 +187,4 @@ class MultipleShootingStage():
     def solve(self):
         self._solver.setInput(self._initialGuess.vectorize(), C.NLP_X_INIT)
         self._solver.solve()
-        return self._solver.output(C.NLP_X_OPT)
+        return self._solver.getOutput(C.NLP_X_OPT)

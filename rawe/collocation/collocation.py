@@ -63,7 +63,7 @@ class LagrangePoly(object):
             # Evaluate the polynomial at the final time to get the coefficients of the continuity equation
             lfcn.setInput(1.0)
             lfcn.evaluate()
-            self.lAtOne[j] = lfcn.output()
+            self.lAtOne[j] = lfcn.getOutput()
             # Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the collocation equation
             for k in range(self.deg+1):
                 lfcn.setInput(self.tau_root[k])
@@ -76,7 +76,7 @@ class LagrangePoly(object):
         for j in range(deg+1):
             self.lfcns[j].setInput(tau)
             self.lfcns[j].evaluate()
-            ret += self.lfcn.output()*zs[j]
+            ret += self.lfcn.getOutput()*zs[j]
 
         return ret
 
@@ -203,7 +203,7 @@ class Coll():
 
         V.cat
 
-        solution = V(solver.output())
+        solution = V(solver.getOutput())
 
         solution["x",:]
 
@@ -533,23 +533,23 @@ class Coll():
 
         # Solve the problem
         self.solver.solve()
-        traj = trajectory.TrajectoryPlotter(self,np.array(self.solver.output('x')))
+        traj = trajectory.TrajectoryPlotter(self,np.array(self.solver.getOutput('x')))
 
         # print active bounds/constraints
         def printBoundViolation():
             # bounds feedback
             xOpt = traj.dvMap.vectorize()
-            lbx = self.solver.input('lbx')
-            ubx = self.solver.input('ubx')
+            lbx = self.solver.getInput('lbx')
+            ubx = self.solver.getInput('ubx')
             self._bounds.printBoundsFeedback(xOpt,lbx,ubx,reportThreshold=0)
 
         def printConstraintViolation():
             xOpt = traj.dvMap.vectorize()
-            lbg = np.array(self.solver.input('lbg'))
-            ubg = np.array(self.solver.input('ubg'))
+            lbg = np.array(self.solver.getInput('lbg'))
+            ubg = np.array(self.solver.getInput('ubg'))
             self._gfcn.setInput(xOpt,0)
             self._gfcn.evaluate()
-            g = self._gfcn.output()
+            g = self._gfcn.getOutput()
             self._constraints.printViolations(g,lbg,ubg,reportThreshold=0)
         printBoundViolation()
         printConstraintViolation()
@@ -558,7 +558,7 @@ class Coll():
         assert ret in ['Solve_Succeeded','Solved_To_Acceptable_Level'], 'Solver failed: '+ret
 
         # Print the optimal cost
-        print "optimal cost: ", float(self.solver.output('f'))
+        print "optimal cost: ", float(self.solver.getOutput('f'))
 
         # Retrieve the solution
         return traj

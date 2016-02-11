@@ -169,8 +169,8 @@ class NmheOutputMapGenerator(object):
         self._outputNames0 = outputNames0
         self._outputNames = ocp.dae.outputNames()
 
-        assert (len(self._outputNames0) == f0.getNumOutputs())
-        assert (len(self._outputNames) == fAll.getNumOutputs())
+        assert (len(self._outputNames0) == f0.nOut())
+        assert (len(self._outputNames) == fAll.nOut())
 
         self._nk = ocp.nk
 
@@ -200,8 +200,8 @@ class NmheOutputMap(object):
             outputMapGenerator.fEveryOutput.setInput(dvs,0)
             outputMapGenerator.fEveryOutput.setInput(U,1)
             outputMapGenerator.fEveryOutput.evaluate()
-            allOutputs = [np.array(outputMapGenerator.fEveryOutput.output(k)).squeeze()
-                          for k in range(outputMapGenerator.fEveryOutput.getNumOutputs())]
+            allOutputs = [np.array(outputMapGenerator.fEveryOutput.getOutput(k)).squeeze()
+                          for k in range(outputMapGenerator.fEveryOutput.nOut())]
         else:
             raise TypeError("OutputMap got unrecognized design vector type: "+str(type(dvs)))
 

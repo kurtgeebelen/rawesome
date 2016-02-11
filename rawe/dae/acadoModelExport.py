@@ -76,8 +76,8 @@ def writeAcadoAlgorithm(dae, f):
             elif op==C.OP_OUTPUT:
 #                assert i1==0, "oh noes, OUTPUT IS MULTIDIMENSIONAL!!!"
 #                write( '%(spaces)sf << 0 == %(work)s_%(i2)d;' % replace )
-                rowidx = f.output(i1).sparsity().getRow()[i3]
-                colidx = f.output(i1).sparsity().col()[i3]
+                rowidx = f.outputSparsity(i1).getRow()[i3]
+                colidx = f.outputSparsity(i1).col()[i3]
                 if i1==0:
                     assert colidx==0
                     replace['row'] = rowidx

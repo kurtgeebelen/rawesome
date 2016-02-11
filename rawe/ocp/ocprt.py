@@ -184,8 +184,8 @@ class OcpRT(object):
         if p is not None:
             self._outputsFun.setInput(p,2)
         self._outputsFun.evaluate()
-        outs = [C.DMatrix(self._outputsFun.output(k))
-                for k in range(self._outputsFun.getNumOutputs())]
+        outs = [C.DMatrix(self._outputsFun.getOutput(k))
+                for k in range(self._outputsFun.nOut())]
         return numpy.squeeze(numpy.array(C.veccat(outs)))
 
     def __setattr__(self, name, value):
@@ -443,7 +443,7 @@ class OcpRT(object):
                 self._outputsFun.setInput(numpy.nan*self.u[k-1,:],1)
             self._outputsFun.evaluate()
             for j,name in enumerate(self.outputNames()):
-                ret[name].append(numpy.array(self._outputsFun.output(j)))
+                ret[name].append(numpy.array(self._outputsFun.getOutput(j)))
 
         for outName in self.outputNames():
             self._log['outputs'][outName].append(numpy.squeeze(ret[outName]))
@@ -804,8 +804,8 @@ class MpcRT(OcpRT):
                        phase1Options=phase1Options)
 
         # set up measurement functions
-        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.dense(self.ocp.yx)])
-        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.dense(self.ocp.yu)])
+        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.densify(self.ocp.yx)])
+        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.densify(self.ocp.yu)])
         self._yxFun.init()
         self._yuFun.init()
         
@@ -849,8 +849,8 @@ class MheRT(OcpRT):
                        integratorMeasurements=C.veccat([ocp.yx,ocp.yu]))
 
         # set up measurement functions
-        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.dense(self.ocp.yx)])
-        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.dense(self.ocp.yu)])
+        self._yxFun = C.SXFunction([ocp.dae.xVec(),ocp.dae.pVec()], [C.densify(self.ocp.yx)])
+        self._yuFun = C.SXFunction([ocp.dae.uVec(),ocp.dae.pVec()], [C.densify(self.ocp.yu)])
         self._yxFun.init()
         self._yuFun.init()
 
@@ -858,13 +858,13 @@ class MheRT(OcpRT):
         self._yxFun.setInput(x,0)
         self._yxFun.setInput(p,1)
         self._yxFun.evaluate()
-        return numpy.squeeze(numpy.array(self._yxFun.output(0)))
+        return numpy.squeeze(numpy.array(self._yxFun.getOutput(0)))
 
     def computeYU(self,u,p):
         self._yuFun.setInput(u,0)
         self._yuFun.setInput(p,1)
         self._yuFun.evaluate()
-        return numpy.squeeze(numpy.array(self._yuFun.output(0)))
+        return numpy.squeeze(numpy.array(self._yuFun.getOutput(0)))
 
 #    def UpdateArrivalCost(self):
 #        ''' Arrival cost implementation.
