@@ -266,7 +266,7 @@ def generateAcadoOcp(ocp, integratorOptions, ocpOptions):
 const int N = %(N)d;
 const double Ts = 1.0;
 OCP _ocp(0, N * Ts, N);
-_ocp.setModel( "model", "rhs", "rhsJacob" );
+_ocp.setModel( "model", "rhs_SA", "rhsJacob_SA" );
 _ocp.setDimensions( %(nx)d, %(nx)d, %(nz)d, %(nu)d, %(nod)d, 0 );
 //_ocp.subjectTo( _differentialEquation );
 ''' % {'nx':len(dae.xNames()), 'nz':len(dae.zNames()), 'nu':len(dae.uNames()), 'nod':len(dae.pNames()), 'N':ocp.N})
@@ -340,8 +340,9 @@ _ocp.setDimensions( %(nx)d, %(nx)d, %(nz)d, %(nu)d, %(nod)d, 0 );
     lines.append('BMatrix  _W(%(size)d, %(size)d); _W.setAll( true );' % {'size': ocp._minLsq.size()})
     lines.append('BMatrix _WN(%(size)d, %(size)d); _WN.setAll( true );' % {'size': ocp._minLsqEndTerm.size()})
 
-    lines.append('std::string _lsqExtern = "lsqExtern";')
-    lines.append('std::string _lsqEndTermExtern = "lsqEndTermExtern";')
+    lines.append('std::string _lsqExtern = "lsqExtern_SA";')
+    lines.append('std::string _lsqEndTermExtern = "lsqEndTermExtern_SA";')
+
     
     # Use CasADi symbolics
     lines.append('_ocp.minimizeLSQ(        _W,        _lsqExtern);')

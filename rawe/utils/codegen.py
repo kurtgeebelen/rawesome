@@ -136,31 +136,27 @@ def writeCCode(f, name):
     def callme(tmpdir):
         backup = os.getcwd()
         os.chdir(tmpdir)
-        f.generate( 'generatedCode')
+        f.generate(name)
         os.chdir(backup)
-    namespace = "ALRIGHT_GUYS_LETS_EXPORT_"+name
-    codestring = withTempdir(callme)['generatedCode.c']
+    codestring = withTempdir(callme)[name+'.c']
     codestring = '\n'.join(['  '+c for c in codestring.split('\n')])
-    codestring = "namespace "+namespace+"{\n"+\
-                 codestring +\
-                 "} // namespace "+ namespace +"\n\n"
 
     real = 'double'
     args0 = ['const '+real+'* x'+str(k) for k in range(f.nIn())]
     args0 += [real+'* r'+str(k) for k in range(f.nOut())]
     args0 = '(' + ', '.join(args0) + ')'
-    args1 = ['x'+str(k) for k in range(f.nIn())]
-    args1 += ['r'+str(k) for k in range(f.nOut())]
-    args1 = '(' + ', '.join(args1) + ')'
+    args1_in = ['x'+str(k) for k in range(f.nIn())]
+    args1_out = ['r'+str(k) for k in range(f.nOut())]
 
-    proto0 = 'void '+name+args0
+    proto0 = 'void '+name+'_SA'+args0
     fun0 = proto0+'{\n' + \
-           '  '+namespace+'::evaluate'+args1+';\n}\n'
+           '  '+ "const real_t *ins[]= {" + ",".join(args1_in) +"}" +";\n"+\
+           '  '+ "real_t *outs[]= {" + ",".join(args1_out) +"}" +";\n"+\
+           '  '+ "int iw[%d];\n" % (f.sz_iw()) +\
+           '  '+ "real_t w[%d];\n" % (f.sz_w()+f.nnzIn()+f.nnzOut()) +\
+           '  '+name +"(ins, outs, iw, w);\n}\n"
 
-    proto1 = 'int '+name+'Wrap(const '+real+'** x, '+real+'** r)'
-    fun1 = proto1+'{\n' + \
-           '  return '+namespace+'::evaluateWrap(x, r);\n}\n'
-    codestring += fun0 + fun1
+    codestring += fun0+ "#undef CASADI_PREFIX\n#undef real_t"
     header = '''\
 #ifndef __%(name)s_H__
 #define __%(name)s_H__
@@ -176,5 +172,5 @@ extern "C" {
 #endif
 
 #endif // __%(name)s_H__
-''' % {'name':name, 'protos':proto0 + ';\n' + proto1 + ';'}
+''' % {'name':name, 'protos':proto0 + ';'}
     return (codestring, header)
